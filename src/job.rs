@@ -63,22 +63,27 @@ impl Job {
         Fut: Future + Send + 'static,
         <Fut as Future>::Output: Into<JobReturnStatus>,
     {
+        println!("girlboss-job::start1");
         let job = Job(Arc::new(JobInner {
             handle: Mutex::new(None),
             status: AtomicJobStatus::new("Starting job".into()),
             started_at: Instant::now(),
             finished: OnceLock::new(),
         }));
+        println!("girlboss-job::start2");
 
         let fut = func(Monitor(job.clone()));
         let job2 = job.clone();
+        println!("girlboss-job::start3");
         let handle = tokio::spawn(async move {
+            println!("girlboss-job::start4");
             // If the job panics, we still want to clean up the job.
             // AssertUnwindSafe should be fine here, since whatever the future
             // does is the user's responsibility, and we don't share any state
             // with `fut`.
             let result = AssertUnwindSafe(fut).catch_unwind().await;
 
+            println!("girlboss-job::start5");
             // Did it panic?
             let mut return_value = match result {
                 Ok(output) => output.into(),
@@ -88,6 +93,7 @@ impl Job {
                 Err(_error) => JobReturnStatus::panicked(),
             };
 
+            println!("girlboss-job::start6");
             // Write the final message
             if let Some(final_message) = return_value.message.take() {
                 job2.set_status(final_message.into());
@@ -101,6 +107,7 @@ impl Job {
             job2.0.finished.set(finished_info).unwrap();
         });
 
+        println!("girlboss-job::start7");
         // This `unwrap` doesn't panic because no one else has access to the
         // handle mutex. The job function has access to a `Monitor`, but that
         // cannot be used to gain access to the `Job` instance and touch the

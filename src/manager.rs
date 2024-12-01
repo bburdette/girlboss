@@ -57,19 +57,27 @@ impl<K: Ord> Girlboss<K> {
         Fut: Future + Send + 'static,
         <Fut as Future>::Output: Into<JobReturnStatus>,
     {
+        println!("girlboss-manager::start");
         let mut jobs = self.jobs.write().await;
+        println!("girlboss-manager::start2");
         match jobs.entry(id.into()) {
             Entry::Vacant(vacant) => {
+                println!("girlboss-manager::start3");
                 let job = Job::start(func);
+                println!("girlboss-manager::start4");
                 vacant.insert(job.clone());
                 Ok(job)
             }
             Entry::Occupied(mut occupied) => {
+                println!("girlboss-manager::start5");
                 if occupied.get().is_finished() {
+                    println!("girlboss-manager::start6");
                     let job = Job::start(func);
+                    println!("girlboss-manager::start7");
                     occupied.insert(job.clone());
                     Ok(job)
                 } else {
+                    println!("girlboss-manager::start8");
                     Err(Error::JobExists)
                 }
             }
